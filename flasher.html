@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IoT Firmware Flasher</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-dark text-light">
+    <nav class="navbar navbar-dark bg-secondary mb-4 shadow">
+        <div class="container">
+            <a class="navbar-brand" href="index.html">IoT Hub</a>
+        </div>
+    </nav>
+    <div class="container py-4">
+        <header class="text-center mb-4">
+            <h1 class="display-5 fw-bold">IoT Firmware Flasher</h1>
+        </header>
+
+        <nav class="d-flex justify-content-center mb-4">
+            <div class="btn-group" role="group">
+                <button class="btn btn-outline-primary active" onclick="switchTab('esp32')">ESP32</button>
+                <button class="btn btn-outline-primary" onclick="switchTab('bw16')">BW16 (RTL8720DN)</button>
+            </div>
+        </nav>
+
+        <div id="esp32-section" class="section active">
+            <div class="card bg-dark text-white border-secondary mb-4 shadow-lg">
+                <div class="card-body">
+            <h2 class="card-title mb-4">ESP32 Flasher</h2>
+            <div class="d-flex flex-wrap gap-2 mb-3">
+                <button id="esp-connect" class="btn btn-primary">Connect</button>
+                <div class="flex-grow-1" id="esp-firmware-group">
+                    <label for="esp-firmware-select" class="form-label">Pilih Firmware:</label>
+                    <select id="esp-firmware-select" class="form-select">
+                        <option value="custom">File Sendiri (.bin)</option>
+                    </select>
+                </div>
+                <div id="esp-custom-file-group" class="flex-grow-1">
+                    <label for="esp-file" class="form-label">Firmware (.bin):</label>
+                    <input type="file" id="esp-file" class="form-control" accept=".bin">
+                </div>
+                <div class="flex-grow-1">
+                    <label for="esp-offset" class="form-label">Flash Address (Hex):</label>
+                    <input type="text" id="esp-offset" class="form-control" value="0x0" placeholder="0x0">
+                </div>
+                <div class="w-100 d-flex gap-2 mt-2">
+                    <button id="esp-flash" class="btn btn-success flex-grow-1" disabled>Flash Firmware</button>
+                    <button id="esp-erase" class="btn btn-danger flex-grow-1" disabled>Erase Flash</button>
+                </div>
+            </div>
+            <div class="d-flex flex-wrap gap-2 mb-3 mt-4 pt-3 border-top border-secondary">
+                <button id="esp-serial-start" class="btn btn-warning flex-grow-1" disabled>Start Serial Monitor</button>
+                <button id="esp-serial-stop" class="btn btn-danger flex-grow-1" disabled>Stop Serial Monitor</button>
+                <button id="esp-console-clear" class="btn btn-secondary">Clear Console</button>
+            </div>
+            <div class="mb-3">
+                <div id="esp-progress-container" class="progress-container hidden">
+                    <div id="esp-progress-bar" class="progress-bar">0%</div>
+                </div>
+            </div>
+            <div id="esp-console" class="console rounded"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="bw16-section" class="section">
+            <div class="card bg-dark text-white border-secondary mb-4 shadow-lg">
+                <div class="card-body">
+            <h2 class="card-title mb-4">BW16 (RTL8720DN) Tool</h2>
+            <div class="alert alert-warning" role="alert">
+                <strong>Warning:</strong> Browser-based flashing for BW16 is experimental.
+                This tool provides a raw serial connection. The official AmebaD Image Tool
+                uses a specific handshake protocol which may not be fully replicated here.
+                Use this for serial logging or raw binary uploads if you know what you are doing.
+            </div>
+            <div class="d-flex flex-wrap gap-2 mb-3">
+                <button id="bw16-connect" class="btn btn-primary">Connect</button>
+                <div class="flex-grow-1">
+                    <label for="bw16-file" class="form-label">Firmware (.bin):</label>
+                    <input type="file" id="bw16-file" class="form-control" accept=".bin">
+                </div>
+                <div class="w-100 d-flex gap-2 mt-2">
+                    <button id="bw16-upload" class="btn btn-success flex-grow-1" disabled>Upload (Raw)</button>
+                    <button id="bw16-console-clear" class="btn btn-secondary">Clear Console</button>
+                </div>
+            </div>
+            <div id="bw16-console" class="console rounded"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="lib/crypto-js.min.js"></script>
+    <script type="module" src="script.js"></script>
+</body>
+</html>

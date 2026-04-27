@@ -69,12 +69,10 @@ jobs:
 
       - name: Prepare bin directory
         run: |
-          mkdir -p bin_deploy
-          cp bin/cardputer_ai_chat.bin bin_deploy/ || echo "No ai chat bin"
-          mv chat_temp/firmware.bin bin_deploy/cardputer_chat.bin
-          mv ncvd_temp/firmware.bin bin_deploy/cardputer_ncvd.bin
-          rm -rf bin
-          mv bin_deploy bin
+          mkdir -p bin
+          mv chat_temp/firmware.bin bin/cardputer_chat.bin || true
+          mv ncvd_temp/firmware.bin bin/cardputer_ncvd.bin || true
+          cd bin && ls *.bin | jq -R -s -c 'split("\n")[:-1]' > ../firmwares.json && cd ..
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
