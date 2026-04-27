@@ -1,6 +1,6 @@
 #include <M5Cardputer.h>
 
-#define SENSOR_PIN 1 // Grove port G1
+#define SENSOR_PIN 2 // Grove port G2 is typically a better ADC pin on S3
 
 M5Canvas canvas(&M5Cardputer.Display);
 
@@ -79,9 +79,10 @@ void loop() {
     }
 
     // Warning indicator & Beep
+    // Lowered threshold from 300 to 50 for much higher sensitivity
     static unsigned long lastBeep = 0;
-    if (p2p > 300) {
-        int beepDelay = map(p2p, 300, 4000, 500, 30);
+    if (p2p > 50) {
+        int beepDelay = map(p2p, 50, 2000, 500, 30);
         beepDelay = constrain(beepDelay, 30, 500);
 
         if (millis() - lastBeep > beepDelay) {
