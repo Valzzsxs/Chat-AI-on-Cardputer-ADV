@@ -24,12 +24,22 @@ jobs:
           python -m pip install --upgrade pip
           pip install --upgrade platformio
 
-      - name: Build project
+      - name: Build cardputer_chat
         working-directory: ./cardputer_chat
         run: pio run
 
-      - name: Upload artifact
+      - name: Build cardputer_ncvd
+        working-directory: ./cardputer_ncvd
+        run: pio run
+
+      - name: Upload cardputer_chat artifact
         uses: actions/upload-artifact@v4
         with:
-          name: firmware
+          name: firmware-chat
           path: cardputer_chat/.pio/build/*/firmware.bin
+
+      - name: Upload cardputer_ncvd artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware-ncvd
+          path: cardputer_ncvd/.pio/build/*/firmware.bin
