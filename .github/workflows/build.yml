@@ -44,3 +44,45 @@ jobs:
         with:
           name: firmware-ncvd
           path: cardputer_ncvd/.pio/build/*/firmware.bin
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download Chat Firmware
+        uses: actions/download-artifact@v4
+        with:
+          name: firmware-chat
+          path: chat_temp
+
+      - name: Download NCVD Firmware
+        uses: actions/download-artifact@v4
+        with:
+          name: firmware-ncvd
+          path: ncvd_temp
+
+      - name: Prepare bin directory
+        run: |
+          mkdir -p bin_deploy
+          cp bin/cardputer_ai_chat.bin bin_deploy/ || echo "No ai chat bin"
+          mv chat_temp/firmware.bin bin_deploy/cardputer_chat.bin
+          mv ncvd_temp/firmware.bin bin_deploy/cardputer_ncvd.bin
+          rm -rf bin
+          mv bin_deploy bin
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4

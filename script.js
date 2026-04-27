@@ -119,59 +119,89 @@ document.getElementById('esp-connect').addEventListener('click', async () => {
     }
 });
 
-document.getElementById('esp-flash').addEventListener('click', async () => {
-    const fileInput = document.getElementById('esp-file');
-    const offsetInput = document.getElementById('esp-offset');
+document.getElementById('esp-firmware-select').addEventListener('change', (e) => {
+    const customGroup = document.getElementById('esp-custom-file-group');
+    if (e.target.value === 'custom') {
+        customGroup.style.display = 'flex';
+    } else {
+        customGroup.style.display = 'none';
+    }
+});
+// Trigger immediately to set initial state
+document.getElementById('esp-firmware-select').dispatchEvent(new Event('change'));
 
-    if (!fileInput.files.length) {
-        alert("Please select a file.");
+document.getElementById('esp-flash').addEventListener('click', async () => {
+    const fwValue = document.getElementById('esp-firmware-select').value;
+    const offsetInput = document.getElementById('esp-offset');
+    const offset = parseInt(offsetInput.value, 16);
+
+    if (isNaN(offset)) {
+        alert("Invalid offset.");
         return;
     }
 
-    const file = fileInput.files[0];
-    const reader = new FileReader();
-
-    reader.onload = async (e) => {
-        const data = e.target.result;
-        const offset = parseInt(offsetInput.value, 16);
-
-        if (isNaN(offset)) {
-            alert("Invalid offset.");
+    if (fwValue === 'custom') {
+        const fileInput = document.getElementById('esp-file');
+        if (!fileInput.files.length) {
+            alert("Please select a file.");
             return;
         }
 
+        const file = fileInput.files[0];
+        const reader = new FileReader();
+
+        reader.onload = async (e) => {
+            const data = e.target.result;
+            await executeFlash(data, offset, file.name);
+        };
+
+        reader.readAsBinaryString(file);
+    } else {
         try {
-            log(`Flashing ${file.name} at ${offsetInput.value}...`, 'esp-console');
-
-            const progressContainer = document.getElementById('esp-progress-container');
-            const progressBar = document.getElementById('esp-progress-bar');
-            progressContainer.classList.remove('hidden');
-            progressBar.style.width = "0%";
-            progressBar.textContent = "0%";
-
-            const fileArray = [{ data: data, address: offset }];
-
-            await espLoader.writeFlash({
-                fileArray: fileArray,
-                flashSize: 'keep',
-                eraseAll: false,
-                compress: true,
-                reportProgress: (fileIndex, written, total) => {
-                    const percent = Math.round((written / total) * 100);
-                    progressBar.style.width = percent + "%";
-                    progressBar.textContent = percent + "%";
-                },
-                calculateMD5Hash: (image) => CryptoJS.MD5(CryptoJS.enc.Latin1.parse(image)),
-            });
-
-            log("Flashing complete! Please RESET the board.", 'esp-console');
+            log(`Downloading ${fwValue}...`, 'esp-console');
+            const response = await fetch('bin/' + fwValue);
+            if (!response.ok) {
+                throw new Error(`Failed to fetch firmware: ${response.statusText}`);
+            }
+            const arrayBuffer = await response.arrayBuffer();
+            const data = String.fromCharCode.apply(null, new Uint8Array(arrayBuffer));
+            await executeFlash(data, offset, fwValue);
         } catch (err) {
-            log(`Flash failed: ${err.message}`, 'esp-console');
+            log(`Download/Flash failed: ${err.message}`, 'esp-console');
         }
-    };
-
-    reader.readAsBinaryString(file);
+    }
 });
+
+async function executeFlash(data, offset, fileName) {
+    try {
+        log(`Flashing ${fileName} at 0x${offset.toString(16)}...`, 'esp-console');
+
+        const progressContainer = document.getElementById('esp-progress-container');
+        const progressBar = document.getElementById('esp-progress-bar');
+        progressContainer.classList.remove('hidden');
+        progressBar.style.width = "0%";
+        progressBar.textContent = "0%";
+
+        const fileArray = [{ data: data, address: offset }];
+
+        await espLoader.writeFlash({
+            fileArray: fileArray,
+            flashSize: 'keep',
+            eraseAll: false,
+            compress: true,
+            reportProgress: (fileIndex, written, total) => {
+                const percent = Math.round((written / total) * 100);
+                progressBar.style.width = percent + "%";
+                progressBar.textContent = percent + "%";
+            },
+            calculateMD5Hash: (image) => CryptoJS.MD5(CryptoJS.enc.Latin1.parse(image)),
+        });
+
+        log("Flashing complete! Please RESET the board.", 'esp-console');
+    } catch (err) {
+        log(`Flash failed: ${err.message}`, 'esp-console');
+    }
+}
 
 document.getElementById('esp-erase').addEventListener('click', async () => {
     if (!confirm("Erase entire flash?")) return;

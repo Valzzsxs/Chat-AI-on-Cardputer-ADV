@@ -18,10 +18,20 @@
         </nav>
 
         <div id="esp32-section" class="section active">
+            <div class="card">
             <h2>ESP32 Flasher</h2>
             <div class="controls">
                 <button id="esp-connect" class="btn primary">Connect</button>
-                <div class="file-group">
+                <div class="input-group" id="esp-firmware-group">
+                    <label for="esp-firmware-select">Pilih Firmware:</label>
+                    <select id="esp-firmware-select">
+                        <option value="custom">File Sendiri (.bin)</option>
+                        <option value="cardputer_chat.bin">Cardputer Chat</option>
+                        <option value="cardputer_ncvd.bin">Cardputer NCVD</option>
+                        <option value="cardputer_ai_chat.bin">Cardputer AI Chat</option>
+                    </select>
+                </div>
+                <div id="esp-custom-file-group" class="file-group">
                     <label for="esp-file">Firmware (.bin):</label>
                     <input type="file" id="esp-file" accept=".bin">
                 </div>
@@ -43,9 +53,11 @@
                 </div>
             </div>
             <div id="esp-console" class="console"></div>
+            </div>
         </div>
 
         <div id="bw16-section" class="section">
+            <div class="card">
             <h2>BW16 (RTL8720DN) Tool</h2>
             <div class="alert warning">
                 <strong>Warning:</strong> Browser-based flashing for BW16 is experimental.
@@ -63,6 +75,7 @@
                 <button id="bw16-console-clear" class="btn secondary">Clear Console</button>
             </div>
             <div id="bw16-console" class="console"></div>
+            </div>
         </div>
     </div>
 
