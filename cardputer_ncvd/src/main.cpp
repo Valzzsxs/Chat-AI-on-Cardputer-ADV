@@ -41,11 +41,7 @@ void loop() {
     // Read the sensor
     int rawValue = analogRead(SENSOR_PIN); // 0-4095
 
-    // Artificially amplify the reading (with a baseline shift to keep it centered)
-    // so that tiny fluctuations become visible
-    int amplifiedValue = (rawValue - 2048) * 3 + 2048;
-
-    rawBuffer[currentIndex] = amplifiedValue;
+    rawBuffer[currentIndex] = rawValue;
     currentIndex = (currentIndex + 1) % WIDTH;
 
     // Calculate stats
@@ -73,7 +69,7 @@ void loop() {
 
     // Draw waveform
     int range = maxVal - minVal;
-    if (range < 150) range = 150; // Adjust minimum range after amplification
+    if (range < 400) range = 400; // minimum range to avoid ambient noise filling screen
 
     for (int i = 0; i < WIDTH - 1; i++) {
         int idx = (currentIndex + i) % WIDTH;
@@ -92,10 +88,9 @@ void loop() {
     }
 
     // Warning indicator & Beep
-    // Lowered threshold from 300 to 50 for much higher sensitivity
     static unsigned long lastBeep = 0;
-    if (p2p > 50) {
-        int beepDelay = map(p2p, 50, 2000, 500, 30);
+    if (p2p > 400) {
+        int beepDelay = map(p2p, 400, 4000, 500, 30);
         beepDelay = constrain(beepDelay, 30, 500);
 
         if (millis() - lastBeep > beepDelay) {
