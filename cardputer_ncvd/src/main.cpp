@@ -1,6 +1,6 @@
 #include <M5Cardputer.h>
 
-#define SENSOR_PIN 2 // Grove port G2 is typically a better ADC pin on S3
+#define SENSOR_PIN 1 // Grove port G1 (Yellow wire)
 
 M5Canvas canvas(&M5Cardputer.Display);
 
@@ -11,15 +11,24 @@ int currentIndex = 0;
 
 void setup() {
     auto cfg = M5.config();
+    // Disable external I2C (Port A) so it doesn't interfere with our Analog pin
+    cfg.external_rtc = false;
+    cfg.external_imu = false;
     M5Cardputer.begin(cfg, true);
+
+    // Force the external I2C port to release the pins if it grabbed them
+    if (M5.Ex_I2C.isEnabled()) {
+        M5.Ex_I2C.release();
+    }
 
     M5Cardputer.Display.setRotation(1);
     M5Cardputer.Speaker.setVolume(128);
 
     canvas.createSprite(WIDTH, HEIGHT);
 
-    // ESP32 ADC setup for the pin
-    pinMode(SENSOR_PIN, ANALOG);
+    // Explicitly set pin to floating input before turning on ADC
+    pinMode(SENSOR_PIN, INPUT);
+    delay(50);
 
     for (int i = 0; i < WIDTH; i++) {
         rawBuffer[i] = 0;
@@ -32,7 +41,11 @@ void loop() {
     // Read the sensor
     int rawValue = analogRead(SENSOR_PIN); // 0-4095
 
-    rawBuffer[currentIndex] = rawValue;
+    // Artificially amplify the reading (with a baseline shift to keep it centered)
+    // so that tiny fluctuations become visible
+    int amplifiedValue = (rawValue - 2048) * 3 + 2048;
+
+    rawBuffer[currentIndex] = amplifiedValue;
     currentIndex = (currentIndex + 1) % WIDTH;
 
     // Calculate stats
@@ -60,7 +73,7 @@ void loop() {
 
     // Draw waveform
     int range = maxVal - minVal;
-    if (range < 200) range = 200; // minimum range to avoid noise filling screen
+    if (range < 150) range = 150; // Adjust minimum range after amplification
 
     for (int i = 0; i < WIDTH - 1; i++) {
         int idx = (currentIndex + i) % WIDTH;
