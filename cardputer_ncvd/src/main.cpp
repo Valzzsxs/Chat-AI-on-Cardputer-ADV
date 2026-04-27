@@ -1,6 +1,7 @@
 #include <M5Cardputer.h>
+#include <driver/adc.h>
 
-#define SENSOR_PIN 1 // Grove port G1 (Yellow wire)
+#define SENSOR_PIN 1 // Grove port G1 (Yellow wire is ADC1_CH0 on ESP32-S3)
 
 M5Canvas canvas(&M5Cardputer.Display);
 
@@ -26,9 +27,15 @@ void setup() {
 
     canvas.createSprite(WIDTH, HEIGHT);
 
-    // Explicitly set pin to floating input before turning on ADC
-    pinMode(SENSOR_PIN, INPUT);
-    delay(50);
+    // Explicitly configure the raw ADC driver for maximum sensitivity
+    // SENSOR_PIN 1 corresponds to ADC1_CHANNEL_0 on ESP32-S3
+    adc1_config_width(ADC_WIDTH_BIT_12); // 0-4095
+    // Use 11dB attenuation. We want to read max voltage range (up to 3.3V)
+    adc1_config_channel_atten(ADC1_CHANNEL_0, ADC_ATTEN_DB_11);
+
+    // Explicitly set pin to high impedance input
+    gpio_set_direction((gpio_num_t)SENSOR_PIN, GPIO_MODE_INPUT);
+    gpio_set_pull_mode((gpio_num_t)SENSOR_PIN, GPIO_FLOATING);
 
     for (int i = 0; i < WIDTH; i++) {
         rawBuffer[i] = 0;
@@ -38,8 +45,8 @@ void setup() {
 void loop() {
     M5Cardputer.update();
 
-    // Read the sensor
-    int rawValue = analogRead(SENSOR_PIN); // 0-4095
+    // Read the sensor using low-level API
+    int rawValue = adc1_get_raw(ADC1_CHANNEL_0); // 0-4095
 
     rawBuffer[currentIndex] = rawValue;
     currentIndex = (currentIndex + 1) % WIDTH;
