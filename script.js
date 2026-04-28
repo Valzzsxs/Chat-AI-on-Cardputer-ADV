@@ -119,10 +119,32 @@ document.getElementById('esp-connect').addEventListener('click', async () => {
     }
 });
 
+(async function loadFirmwares() {
+    try {
+        const response = await fetch('firmwares.json');
+        if (response.ok) {
+            const files = await response.json();
+            const select = document.getElementById('esp-firmware-select');
+            if (select) {
+                files.forEach(f => {
+                    if (f.trim() !== '') {
+                        const opt = document.createElement('option');
+                        opt.value = f;
+                        opt.textContent = f;
+                        select.appendChild(opt);
+                    }
+                });
+            }
+        }
+    } catch (e) {
+        console.error('Failed to load firmwares list', e);
+    }
+})();
+
 document.getElementById('esp-firmware-select').addEventListener('change', (e) => {
     const customGroup = document.getElementById('esp-custom-file-group');
     if (e.target.value === 'custom') {
-        customGroup.style.display = 'flex';
+        customGroup.style.display = 'block';
     } else {
         customGroup.style.display = 'none';
     }
@@ -163,8 +185,13 @@ document.getElementById('esp-flash').addEventListener('click', async () => {
             if (!response.ok) {
                 throw new Error(`Failed to fetch firmware: ${response.statusText}`);
             }
-            const arrayBuffer = await response.arrayBuffer();
-            const data = String.fromCharCode.apply(null, new Uint8Array(arrayBuffer));
+            const blob = await response.blob();
+            const reader = new FileReader();
+            const data = await new Promise((resolve, reject) => {
+                reader.onload = (e) => resolve(e.target.result);
+                reader.onerror = () => reject(new Error("Failed to read blob"));
+                reader.readAsBinaryString(blob);
+            });
             await executeFlash(data, offset, fwValue);
         } catch (err) {
             log(`Download/Flash failed: ${err.message}`, 'esp-console');
