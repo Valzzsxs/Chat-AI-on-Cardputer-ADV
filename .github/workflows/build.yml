@@ -51,9 +51,12 @@ jobs:
     permissions:
       pages: write
       id-token: write
+      contents: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Download Chat Firmware
         uses: actions/download-artifact@v4
@@ -73,6 +76,14 @@ jobs:
           mv chat_temp/firmware.bin bin/cardputer_chat.bin || true
           mv ncvd_temp/firmware.bin bin/cardputer_ncvd.bin || true
           cd bin && ls *.bin | jq -R -s -c 'split("\n")[:-1]' > ../firmwares.json && cd ..
+
+      - name: Commit updated firmwares.json
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add firmwares.json
+          git add bin/*.bin || true
+          git diff --quiet && git diff --staged --quiet || (git commit -m "chore: auto-update firmwares.json and bin/ [skip ci]" && git push)
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
