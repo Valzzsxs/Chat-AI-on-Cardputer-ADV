@@ -42,29 +42,21 @@ function updateEspUI(connected, monitoring = false) {
     const connectBtn = document.getElementById('esp-connect');
     const flashBtn = document.getElementById('esp-flash');
     const eraseBtn = document.getElementById('esp-erase');
-    const startMonBtn = document.getElementById('esp-serial-start');
-    const stopMonBtn = document.getElementById('esp-serial-stop');
 
     if (monitoring) {
         connectBtn.disabled = true;
         flashBtn.disabled = true;
         eraseBtn.disabled = true;
-        startMonBtn.disabled = true;
-        stopMonBtn.disabled = false;
         connectBtn.textContent = "Monitor Active";
     } else if (connected) {
         connectBtn.disabled = true;
         flashBtn.disabled = false;
         eraseBtn.disabled = false;
-        startMonBtn.disabled = false;
-        stopMonBtn.disabled = true;
         connectBtn.textContent = "Connected";
     } else {
         connectBtn.disabled = false;
         flashBtn.disabled = true;
         eraseBtn.disabled = true;
-        startMonBtn.disabled = true;
-        stopMonBtn.disabled = true;
         connectBtn.textContent = "Connect";
     }
 }
@@ -224,7 +216,8 @@ async function executeFlash(data, offset, fileName) {
             calculateMD5Hash: (image) => CryptoJS.MD5(CryptoJS.enc.Latin1.parse(image)),
         });
 
-        log("Flashing complete! Please RESET the board.", 'esp-console');
+        log("Flashing complete! Starting serial monitor...", 'esp-console');
+        await startEspSerialMonitor();
     } catch (err) {
         log(`Flash failed: ${err.message}`, 'esp-console');
     }
@@ -236,7 +229,8 @@ document.getElementById('esp-erase').addEventListener('click', async () => {
     try {
         log("Erasing flash...", 'esp-console');
         await espLoader.eraseFlash();
-        log("Erase complete! Please RESET the board.", 'esp-console');
+        log("Erase complete! Starting serial monitor...", 'esp-console');
+        await startEspSerialMonitor();
     } catch (e) {
         log(`Erase failed: ${e.message}`, 'esp-console');
     }
@@ -248,7 +242,7 @@ document.getElementById('esp-console-clear').addEventListener('click', () => {
 
 // ================= ESP32 SERIAL MONITOR =================
 
-document.getElementById('esp-serial-start').addEventListener('click', async () => {
+async function startEspSerialMonitor() {
     // 1. Clean up existing loader connection to unlock port
     if (espTransport) {
         try {
@@ -265,7 +259,7 @@ document.getElementById('esp-serial-start').addEventListener('click', async () =
         espLoader = null;
     }
 
-    // 2. Acquire Port
+    // 2. Acquire Port (should already be acquired from flash step, but fallback just in case)
     if (!serialPort) {
         try {
             const filters = [
@@ -308,16 +302,7 @@ document.getElementById('esp-serial-start').addEventListener('click', async () =
     }
 
     readSerialLoop();
-});
-
-document.getElementById('esp-serial-stop').addEventListener('click', async () => {
-    if (serialReader) {
-        await serialReader.cancel();
-        serialReader = null;
-    }
-    updateEspUI(false, false);
-    log("Serial Monitor Stopped. Connect to flash again.", 'esp-console');
-});
+}
 
 async function readSerialLoop() {
     const textDecoder = new TextDecoderStream();
