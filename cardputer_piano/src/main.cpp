@@ -49,6 +49,9 @@ void setup() {
     auto cfg = M5.config();
     M5Cardputer.begin(cfg);
 
+    // Set maximum speaker volume
+    M5Cardputer.Speaker.setVolume(255);
+
     M5Cardputer.Display.setRotation(1);
     canvas.createSprite(WIDTH, HEIGHT);
 
