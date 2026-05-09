@@ -49,8 +49,8 @@ void setup() {
     auto cfg = M5.config();
     M5Cardputer.begin(cfg);
 
-    // Set maximum speaker volume
-    M5Cardputer.Speaker.setVolume(255);
+    // Set high volume, but avoid absolute max to prevent hardware clipping/distortion
+    M5Cardputer.Speaker.setVolume(180);
 
     M5Cardputer.Display.setRotation(1);
     canvas.createSprite(WIDTH, HEIGHT);
@@ -76,28 +76,20 @@ void loop() {
 
     if (key_pressed) {
         if (active_key_index != new_active_index) {
-            // New key pressed, update display and tone
+            // New key pressed, update display and start tone continuously
             active_key_index = new_active_index;
             drawPiano();
-            // Speaker.tone(frequency, duration). Using a short duration to allow continuous holding logic if needed,
-            // or we could use continuous tone and stop it when no key is pressed.
-            // tone(freq, duration_ms) where 0 means continuous?
-            // In many M5 libraries, tone(freq, duration) plays for the duration.
-            // Let's play continuously while pressed.
-            M5Cardputer.Speaker.tone(tones[active_key_index], 50);
-        } else {
-            // Key is being held, keep playing tone
-             M5Cardputer.Speaker.tone(tones[active_key_index], 50);
+            M5Cardputer.Speaker.tone(tones[active_key_index]);
         }
+        // If the same key is held, do nothing (don't re-trigger tone to avoid distortion)
     } else {
         if (active_key_index != -1) {
-            // Key was released
+            // Key was released, stop the tone
             active_key_index = -1;
             drawPiano();
-            // M5Cardputer.Speaker.stop(); might not exist or be necessary if tone duration is short.
-            // Let's rely on the short 50ms duration fading out.
+            M5Cardputer.Speaker.stop();
         }
     }
 
-    delay(20); // Small delay for debouncing and loop control
+    delay(10); // Small delay for debouncing and loop control
 }
