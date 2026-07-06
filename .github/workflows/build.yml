@@ -37,6 +37,10 @@ jobs:
         working-directory: ./cardputer_piano
         run: pio run
 
+      - name: Build cardputer_adv
+        working-directory: ./cardputer_adv
+        run: pio run
+
       - name: Upload cardputer_chat artifact
         uses: actions/upload-artifact@v4
         with:
@@ -54,6 +58,12 @@ jobs:
         with:
           name: firmware-piano
           path: cardputer_piano/.pio/build/*/firmware.bin
+
+      - name: Upload cardputer_adv artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware-adv
+          path: cardputer_adv/.pio/build/*/firmware.bin
 
   deploy:
     needs: build
@@ -86,12 +96,19 @@ jobs:
           name: firmware-piano
           path: piano_temp
 
+      - name: Download ADV Firmware
+        uses: actions/download-artifact@v4
+        with:
+          name: firmware-adv
+          path: adv_temp
+
       - name: Prepare bin directory
         run: |
           mkdir -p bin
           mv chat_temp/firmware.bin bin/cardputer_chat.bin || true
           mv ncvd_temp/firmware.bin bin/cardputer_ncvd.bin || true
           mv piano_temp/firmware.bin bin/cardputer_piano.bin || true
+          mv adv_temp/firmware.bin bin/cardputer_adv.bin || true
           cd bin && ls *.bin | jq -R -s -c 'split("\n")[:-1]' > ../firmwares.json && cd ..
 
       - name: Commit updated firmwares.json
