@@ -125,9 +125,12 @@ void setup() {
     M5Cardputer.begin(cfg);
 
     // Explicit initialization for the display subsystem to prevent black screen on some bootloaders
-    M5Cardputer.Display.begin();
+    // Note: Calling M5Cardputer.Display.begin() manually causes crashes on some newer M5Unified builds.
+    // Instead, setting brightness and clearing screen should suffice after M5Cardputer.begin.
     M5Cardputer.Display.setRotation(1);
-    M5Cardputer.Display.setBrightness(128);
+    M5Cardputer.Display.setBrightness(128); // Sometimes if 0, it appears black
+    M5Cardputer.Display.fillScreen(BLUE); // Initial visual feedback
+    delay(500);
 
     // Draw Static UI
     drawBaseUI();
