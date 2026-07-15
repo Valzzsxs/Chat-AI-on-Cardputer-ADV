@@ -58,12 +58,15 @@ String lastAction = "None";
 
 void drawBaseUI() {
     M5Cardputer.Display.fillScreen(BLACK);
+
+    // Header
     M5Cardputer.Display.fillRect(0, 0, M5Cardputer.Display.width(), 30, BLUE);
     M5Cardputer.Display.setTextColor(WHITE);
     M5Cardputer.Display.setTextSize(2);
     M5Cardputer.Display.setCursor(10, 8);
     M5Cardputer.Display.println("BLE Remote ADV");
 
+    // Controls Section
     M5Cardputer.Display.setTextSize(1);
     M5Cardputer.Display.setTextColor(WHITE);
     M5Cardputer.Display.setCursor(10, 75);
@@ -76,6 +79,7 @@ void drawBaseUI() {
     M5Cardputer.Display.println("[/ / RightArrow]: Volume Up");
     M5Cardputer.Display.println("[Space / Enter] : Play / Pause");
 
+    // Static text for Status and Action
     M5Cardputer.Display.setTextColor(LIGHTGREY);
     M5Cardputer.Display.setCursor(10, 40);
     M5Cardputer.Display.print("Status: ");
@@ -86,7 +90,9 @@ void drawBaseUI() {
 }
 
 void updateStatus(bool isConnected) {
+    // Clear status area
     M5Cardputer.Display.fillRect(60, 40, 180, 30, BLACK);
+
     M5Cardputer.Display.setTextSize(1);
     M5Cardputer.Display.setCursor(60, 40);
     if (isConnected) {
@@ -105,7 +111,9 @@ void updateStatus(bool isConnected) {
 }
 
 void updateAction(String action) {
+    // Clear action area
     M5Cardputer.Display.fillRect(100, 140, 140, 15, BLACK);
+
     M5Cardputer.Display.setTextSize(1);
     M5Cardputer.Display.setTextColor(YELLOW);
     M5Cardputer.Display.setCursor(100, 140);
@@ -114,15 +122,19 @@ void updateAction(String action) {
 
 void setup() {
     auto cfg = M5.config();
-    M5Cardputer.begin(cfg); // Fixed: Removed true flag that causes failure in this M5Cardputer version
+    M5Cardputer.begin(cfg);
 
+    // Explicit initialization for the display subsystem to prevent black screen on some bootloaders
+    M5Cardputer.Display.begin();
     M5Cardputer.Display.setRotation(1);
     M5Cardputer.Display.setBrightness(128);
 
+    // Draw Static UI
     drawBaseUI();
     updateStatus(false);
     updateAction("Waiting...");
 
+    // Start BLE
     bleKeyboard.begin();
 }
 
@@ -131,6 +143,7 @@ void loop() {
 
     bool isConnected = bleKeyboard.isConnected();
 
+    // Update Status if connection state changes
     if (isConnected != wasConnected) {
         wasConnected = isConnected;
         updateStatus(isConnected);
@@ -142,26 +155,31 @@ void loop() {
         Keyboard_Class::KeysState status = M5Cardputer.Keyboard.keysState();
         bool actionTaken = false;
 
+        // Play / Pause
         if (status.enter || M5Cardputer.Keyboard.isKeyPressed(' ')) {
             bleKeyboard.write(KEY_MEDIA_PLAY_PAUSE);
             lastAction = "Play / Pause";
             actionTaken = true;
         }
+        // Scroll Up (Up Arrow) - Key ';' or Native Up (Fn + /)
         else if (M5Cardputer.Keyboard.isKeyPressed(';') || (M5Cardputer.Keyboard.isKeyPressed('/') && status.fn) || (M5Cardputer.Keyboard.isKeyPressed('/') && status.ctrl)) {
-            bleKeyboard.write(0xDA);
+            bleKeyboard.write(0xDA); // BLE Keyboard UP ARROW
             lastAction = "Scroll Up";
             actionTaken = true;
         }
+        // Scroll Down (Down Arrow) - Key '.' or Native Down (Fn + .)
         else if (M5Cardputer.Keyboard.isKeyPressed('.') || (M5Cardputer.Keyboard.isKeyPressed('.') && status.fn) || (M5Cardputer.Keyboard.isKeyPressed('.') && status.ctrl)) {
-            bleKeyboard.write(0xD9);
+            bleKeyboard.write(0xD9); // BLE Keyboard DOWN ARROW
             lastAction = "Scroll Down";
             actionTaken = true;
         }
+        // Volume Down (Left Arrow) - Key ',' or Native Left (Fn + ,)
         else if (M5Cardputer.Keyboard.isKeyPressed(',') || (M5Cardputer.Keyboard.isKeyPressed(',') && status.fn) || (M5Cardputer.Keyboard.isKeyPressed(',') && status.ctrl)) {
             bleKeyboard.write(KEY_MEDIA_VOLUME_DOWN);
             lastAction = "Volume Down";
             actionTaken = true;
         }
+        // Volume Up (Right Arrow) - Key '/' or Native Right (Fn + Space or Fn + ';')
         else if ((M5Cardputer.Keyboard.isKeyPressed('/') && !status.fn && !status.ctrl) || (M5Cardputer.Keyboard.isKeyPressed(';') && status.fn) || (M5Cardputer.Keyboard.isKeyPressed(';') && status.ctrl) || (M5Cardputer.Keyboard.isKeyPressed(' ') && status.fn)) {
             bleKeyboard.write(KEY_MEDIA_VOLUME_UP);
             lastAction = "Volume Up";
