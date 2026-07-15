@@ -77,11 +77,11 @@ void drawBaseUI() {
     M5Cardputer.Display.println("------------------------------");
     M5Cardputer.Display.setCursor(10, 85);
     M5Cardputer.Display.setTextColor(ORANGE);
-    M5Cardputer.Display.println("[W / ;] : Scroll Up");
-    M5Cardputer.Display.println("[S / .] : Scroll Down");
-    M5Cardputer.Display.println("[A / ,] : Volume Down");
-    M5Cardputer.Display.println("[D / /] : Volume Up");
-    M5Cardputer.Display.println("[Space] : Play / Pause");
+    M5Cardputer.Display.println("[; / UpArrow]   : Scroll Up");
+    M5Cardputer.Display.println("[. / DownArrow] : Scroll Down");
+    M5Cardputer.Display.println("[, / LeftArrow] : Volume Down");
+    M5Cardputer.Display.println("[/ / RightArrow]: Volume Up");
+    M5Cardputer.Display.println("[Space / Enter] : Play / Pause");
 
     // Static text for Status and Action
     M5Cardputer.Display.setTextColor(LIGHTGREY);
@@ -157,29 +157,38 @@ void loop() {
         Keyboard_Class::KeysState status = M5Cardputer.Keyboard.keysState();
         bool actionTaken = false;
 
+        // Native M5Cardputer arrow keys logic (Fn/Ctrl + key combinations mapped internally or checked by state)
+        // Usually, the native keyboard maps Fn+ ; / . / , / / to arrows, but let's just intercept the Fn modifier along with the key, or standard key mapping.
+        // If Fn is pressed, Cardputer might not emit the direct character but it sets modifiers.
+
+        // Play / Pause
         if (status.enter || M5Cardputer.Keyboard.isKeyPressed(' ')) {
             bleKeyboard.write(KEY_MEDIA_PLAY_PAUSE);
             lastAction = "Play / Pause";
             actionTaken = true;
         }
-        else if (M5Cardputer.Keyboard.isKeyPressed(';') || M5Cardputer.Keyboard.isKeyPressed('w')) {
-            // Hex code for UP_ARROW in standard HID
-            bleKeyboard.write(0xDA);
+        // Scroll Up (Up Arrow) - Key ';' or Native Up (which might be Fn + /)
+        // M5Cardputer physical keys: ';' is top right row. '/' is bottom right row.
+        // Some users map Fn + / to UP. Let's allow either.
+        else if (M5Cardputer.Keyboard.isKeyPressed(';') || (M5Cardputer.Keyboard.isKeyPressed('/') && status.fn) || (M5Cardputer.Keyboard.isKeyPressed('/') && status.ctrl)) {
+            bleKeyboard.write(0xDA); // BLE Keyboard UP ARROW
             lastAction = "Scroll Up";
             actionTaken = true;
         }
-        else if (M5Cardputer.Keyboard.isKeyPressed('.') || M5Cardputer.Keyboard.isKeyPressed('s')) {
-            // Hex code for DOWN_ARROW in standard HID
-            bleKeyboard.write(0xD9);
+        // Scroll Down (Down Arrow) - Key '.' or Native Down (Fn + .)
+        else if (M5Cardputer.Keyboard.isKeyPressed('.') || (M5Cardputer.Keyboard.isKeyPressed('.') && status.fn) || (M5Cardputer.Keyboard.isKeyPressed('.') && status.ctrl)) {
+            bleKeyboard.write(0xD9); // BLE Keyboard DOWN ARROW
             lastAction = "Scroll Down";
             actionTaken = true;
         }
-        else if (M5Cardputer.Keyboard.isKeyPressed(',') || M5Cardputer.Keyboard.isKeyPressed('a')) {
+        // Volume Down (Left Arrow) - Key ',' or Native Left (Fn + ,)
+        else if (M5Cardputer.Keyboard.isKeyPressed(',') || (M5Cardputer.Keyboard.isKeyPressed(',') && status.fn) || (M5Cardputer.Keyboard.isKeyPressed(',') && status.ctrl)) {
             bleKeyboard.write(KEY_MEDIA_VOLUME_DOWN);
             lastAction = "Volume Down";
             actionTaken = true;
         }
-        else if (M5Cardputer.Keyboard.isKeyPressed('/') || M5Cardputer.Keyboard.isKeyPressed('d')) {
+        // Volume Up (Right Arrow) - Key '/' or Native Right (Fn + Space or Fn + ';')
+        else if ((M5Cardputer.Keyboard.isKeyPressed('/') && !status.fn && !status.ctrl) || (M5Cardputer.Keyboard.isKeyPressed(';') && status.fn) || (M5Cardputer.Keyboard.isKeyPressed(';') && status.ctrl) || (M5Cardputer.Keyboard.isKeyPressed(' ') && status.fn)) {
             bleKeyboard.write(KEY_MEDIA_VOLUME_UP);
             lastAction = "Volume Up";
             actionTaken = true;
@@ -187,7 +196,6 @@ void loop() {
 
         if (actionTaken) {
             updateAction(lastAction);
-            // Small delay to prevent rapid-fire triggering unless intended
             delay(100);
         }
     }
